@@ -1,7 +1,7 @@
 # pt-app
 Kotlin forrit sem tengist progresstracker
 
-##### [YouTube](https://example.com)
+##### [YouTube](https://youtu.be/4GLH5ggQlp4)
 
 
 ### Forritið notar 
