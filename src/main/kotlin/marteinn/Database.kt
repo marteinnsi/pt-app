@@ -5,6 +5,7 @@ import java.sql.DriverManager
 import java.sql.ResultSet
 import java.util.Date
 import java.util.Dictionary
+import java.util.LinkedList
 
 class Database {
     private val connection: Connection
@@ -86,6 +87,22 @@ class Database {
             statement.resultSet.next()
             return statement.resultSet.getInt(1) to statement.resultSet.getInt(2)
         }
+    }
+
+    fun students(limit: Int): List<Student> {
+        val list = LinkedList<Student>()
+        connection.prepareCall("CALL ListStudents($limit)").use { statement ->
+            statement.execute()
+            while (statement.resultSet.next()) {
+                val id: Int = statement.resultSet.getInt("studentID")
+                val firstName: String = statement.resultSet.getString("firstName")
+                val lastName: String = statement.resultSet.getString("lastName")
+                val dob: Date = statement.resultSet.getDate("dob")
+                val trackId: Int = statement.resultSet.getInt("trackId")
+                list.add(Student(id, firstName, lastName, dob, trackId))
+            }
+        }
+        return list
     }
 
     fun readToDict(limit: Int): List<Map<String, String>> {

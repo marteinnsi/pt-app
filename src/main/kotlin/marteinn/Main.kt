@@ -4,6 +4,7 @@ import com.github.kinquirer.KInquirer
 import com.github.kinquirer.components.*
 import com.github.kinquirer.core.Choice
 import java.util.Date
+import kotlin.system.exitProcess
 
 
 private val database = Database()
@@ -35,17 +36,15 @@ fun main() {
 }
 
 fun renderMenu() {
-
     val choice: String = KInquirer.promptList(
-        message = "Select operation:",
-        choices = listOf(
+        message = "Select operation:", choices = listOf(
             "1 Create student",
             "2 Read student",
             "3 Update student",
             "4 Delete student",
             "5 Student list",
-        ),
-        viewOptions = ListViewOptions(
+            "0 Quit"
+        ), viewOptions = ListViewOptions(
             questionMarkPrefix = "E",
             cursor = " >  ",
             nonCursor = "    ",
@@ -58,12 +57,75 @@ fun renderMenu() {
         3 -> renderUpdateStudent()
         4 -> renderDeleteStudent()
         5 -> renderStudentList()
+        0 -> {
+            println("Goodbye!")
+            exitProcess(0)
+        }
+
         else -> {}
     }
 }
 
 fun renderStudentList() {
-    TODO("Not yet implemented")
+    val limit = KInquirer.promptInputNumber("Limit: ")
+    val students = database.students(limit.toInt())
+
+    val choice = KInquirer.promptListObject(
+        message = "Select student:", choices = students.map(::studentToChoice).toList(), viewOptions = ListViewOptions(
+            questionMarkPrefix = "E",
+            cursor = " >  ",
+            nonCursor = "    ",
+        ), pageSize = 8
+    )
+
+    renderStudentMenu(choice)
+}
+
+fun renderStudentMenu(student: Student) {
+    val operation = KInquirer.promptList(
+        message = "${student.firstName} ${student.lastName}", choices = listOf(
+            "Read", "Update", "Delete"
+        ), viewOptions = ListViewOptions(
+            questionMarkPrefix = "E",
+            cursor = " >  ",
+            nonCursor = "    ",
+        )
+    )
+
+    when (operation) {
+        "Read" -> {
+            println("Name: ${student.firstName} ${student.lastName}")
+            println("Date of birth: ${student.dob}")
+            println("Track: ${student.trackId}")
+        }
+
+        "Update" -> {
+            val tracks = database.tracks()
+
+            val existingStudentTrack = tracks.first { it.id == student.trackId }
+
+            val firstName = KInquirer.promptInput("First Name: ", hint = student.firstName)
+            val lastName = KInquirer.promptInput("Last Name: ", hint = student.lastName)
+            val dob = KInquirer.promptInput("Date of Birth (DD/MM/YYYY): ")
+            val trackId = KInquirer.promptListObject(
+                message = "Track:", hint = existingStudentTrack.name, choices = tracks.map(::trackToChoice).toList(), viewOptions = ListViewOptions(
+                    questionMarkPrefix = "E",
+                    cursor = " >  ",
+                    nonCursor = "    ",
+                )
+            )
+
+            val changes = database.update(student.id, firstName, lastName, Date(dob), trackId)
+            println("Changed $changes rows")
+        }
+
+        "Delete" -> {
+            val deleted = database.delete(student.id)
+            println("Deleted $deleted rows")
+        }
+
+        else -> {}
+    }
 }
 
 fun renderDeleteStudent() {
@@ -92,10 +154,7 @@ fun renderUpdateStudent() {
     val lastName = KInquirer.promptInput("Last Name: ", hint = existingStudent.lastName)
     val dob = KInquirer.promptInput("Date of Birth (DD/MM/YYYY): ")
     val trackId = KInquirer.promptListObject(
-        message = "Track:",
-        hint = existingStudentTrack.name,
-        choices = tracks.map(::trackToChoice).toList(),
-        viewOptions = ListViewOptions(
+        message = "Track:", hint = existingStudentTrack.name, choices = tracks.map(::trackToChoice).toList(), viewOptions = ListViewOptions(
             questionMarkPrefix = "E",
             cursor = " >  ",
             nonCursor = "    ",
@@ -123,9 +182,7 @@ fun renderCreateStudent() {
     val lastName = KInquirer.promptInput("Last Name: ")
     val dob = KInquirer.promptInput("Date of Birth (DD/MM/YYYY): ")
     val trackId = KInquirer.promptListObject(
-        message = "Track:",
-        choices = tracks.map(::trackToChoice).toList(),
-        viewOptions = ListViewOptions(
+        message = "Track:", choices = tracks.map(::trackToChoice).toList(), viewOptions = ListViewOptions(
             questionMarkPrefix = "E",
             cursor = " >  ",
             nonCursor = "    ",
@@ -136,6 +193,11 @@ fun renderCreateStudent() {
 
     println("Created student #$id")
 }
+
+fun studentToChoice(student: Student): Choice<Student> {
+    return Choice("${student.firstName} ${student.lastName}", student)
+}
+
 
 fun trackToChoice(track: Track): Choice<Int> {
     return Choice(Regex("[^A-Za-z0-9 ]").replace(track.name, ""), track.id)
