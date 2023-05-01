@@ -12,7 +12,7 @@ Kotlin Inquirer: `com.github.kotlin-inquirer:kotlin-inquirer`
 1. Create
 2. Read
 3. Update
-4. ~~Delete~~ virkar ekki
+4. Delete - virkar ekki ef nemandi er í sumum öðrum tables 
 5. List
 
 ### 
